@@ -130,6 +130,55 @@ describe("applyNonInteractiveGatewayConfig token resolution chain", () => {
     expect(result?.nextConfig.gateway?.auth?.token).toBe("generated-random-token");
   });
 
+  it("writes none auth without generating or preserving a gateway token", () => {
+    const result = applyGatewayConfig({
+      nextConfig: createTokenConfig("existing-user-token"),
+      opts: { gatewayAuth: "none" } as unknown as OnboardOptions,
+    });
+
+    expect(result?.authMode).toBe("none");
+    expect(result?.nextConfig.gateway?.auth).toEqual({ mode: "none" });
+    expect(randomToken).not.toHaveBeenCalled();
+  });
+
+  it("rejects gateway token flags when gateway auth is none", () => {
+    const runtime = createRuntime();
+
+    const result = applyGatewayConfig({
+      opts: {
+        gatewayAuth: "none",
+        gatewayToken: "unused-token",
+      } as unknown as OnboardOptions,
+      runtime,
+    });
+
+    expect(result).toBeNull();
+    expect(runtime.error).toHaveBeenCalledWith(
+      "Use either --gateway-auth none or gateway auth secret flags, not both.",
+    );
+    expect(runtime.exit).toHaveBeenCalledWith(1);
+    expect(randomToken).not.toHaveBeenCalled();
+  });
+
+  it("rejects gateway password flags when gateway auth is none", () => {
+    const runtime = createRuntime();
+
+    const result = applyGatewayConfig({
+      opts: {
+        gatewayAuth: "none",
+        gatewayPassword: "unused-password",
+      } as unknown as OnboardOptions,
+      runtime,
+    });
+
+    expect(result).toBeNull();
+    expect(runtime.error).toHaveBeenCalledWith(
+      "Use either --gateway-auth none or gateway auth secret flags, not both.",
+    );
+    expect(runtime.exit).toHaveBeenCalledWith(1);
+    expect(randomToken).not.toHaveBeenCalled();
+  });
+
   // --- SecretRef preservation ---
 
   it("preserves an existing SecretRef when no flag or env override is provided", () => {

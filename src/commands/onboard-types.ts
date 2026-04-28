@@ -14,7 +14,7 @@ export type AuthChoice = BuiltInAuthChoice | (string & {});
 
 /** Auth choice groups are plugin-owned ids plus the core `custom` bucket. */
 export type AuthChoiceGroupId = "custom" | (string & {});
-export type GatewayAuthChoice = "token" | "password";
+export type GatewayAuthChoice = "token" | "password" | "none";
 export type ResetScope = "config" | "config+creds+sessions" | "full";
 export type GatewayBind = "loopback" | "lan" | "auto" | "custom" | "tailnet";
 export type TailscaleMode = "off" | "serve" | "funnel";

@@ -148,7 +148,7 @@ export function registerOnboardCommand(program: Command) {
     .option("--custom-text-input", "Mark the custom provider model as text-only")
     .option("--gateway-port <port>", "Gateway port")
     .option("--gateway-bind <mode>", "Gateway bind: loopback|tailnet|lan|auto|custom")
-    .option("--gateway-auth <mode>", "Gateway auth: token|password")
+    .option("--gateway-auth <mode>", "Gateway auth: token|password|none")
     .option("--gateway-token <token>", "Gateway token (token auth)")
     .option(
       "--gateway-token-ref-env <name>",

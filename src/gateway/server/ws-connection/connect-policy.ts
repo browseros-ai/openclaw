@@ -115,6 +115,10 @@ export function evaluateMissingDeviceIdentity(params: {
   authOk: boolean;
   hasSharedAuth: boolean;
   isLocalClient: boolean;
+  // BrowserOS-style private-ingress no-auth deployments. Threaded through so
+  // the same handshake decision can recognize "I own the network boundary,
+  // skip auth entirely" without needing a separate evaluator path.
+  authMode?: string;
 }): MissingDeviceIdentityDecision {
   if (params.hasDeviceIdentity) {
     return { kind: "allow" };
@@ -128,6 +132,18 @@ export function evaluateMissingDeviceIdentity(params: {
     // sessions only; node-role sessions must still satisfy device identity so
     // that the break-glass flag cannot be abused to admit device-less node
     // registrations (see #45405 review).
+    return { kind: "allow" };
+  }
+  if (params.role === "operator" && params.authMode === "none") {
+    // BrowserOS-style private-ingress no-auth path. The runtime startup gate
+    // in server-runtime-config.ts already required
+    // OPENCLAW_GATEWAY_PRIVATE_INGRESS_NO_AUTH=1 for any non-loopback bind to
+    // boot with auth.mode=none. Reaching this branch therefore means the
+    // embedding runtime explicitly opted into "I own the network boundary,
+    // skip auth entirely". Pairing-as-hygiene adds no security in that
+    // configuration: any client reaching the bind already needs no credentials.
+    // Scope to operator role so node-role registrations still require device
+    // identity (matching the controlUiAuthPolicy.allowBypass shape above).
     return { kind: "allow" };
   }
   if (params.isControlUi && !params.controlUiAuthPolicy.allowBypass) {

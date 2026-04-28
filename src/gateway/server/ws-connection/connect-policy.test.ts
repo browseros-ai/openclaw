@@ -210,6 +210,85 @@ describe("ws connect policy", () => {
     ).toBe("reject-device-required");
   });
 
+  test("auth.mode=none skips device identity for operator role only (private-ingress no-auth)", () => {
+    const policy = resolveControlUiAuthPolicy({
+      isControlUi: false,
+      controlUiConfig: undefined,
+      deviceRaw: null,
+    });
+
+    // Non-Control-UI operator with auth.mode=none: device-less connection is
+    // allowed. This is the BrowserOS private-ingress backend path. The runtime
+    // startup gate already required OPENCLAW_GATEWAY_PRIVATE_INGRESS_NO_AUTH=1
+    // for non-loopback bind to boot with auth.mode=none, so reaching this code
+    // path means the embedding runtime explicitly accepted the threat model.
+    expect(
+      evaluateMissingDeviceIdentity({
+        hasDeviceIdentity: false,
+        role: "operator",
+        isControlUi: false,
+        controlUiAuthPolicy: policy,
+        trustedProxyAuthOk: false,
+        sharedAuthOk: false,
+        authOk: true,
+        hasSharedAuth: false,
+        isLocalClient: false,
+        authMode: "none",
+      }).kind,
+    ).toBe("allow");
+
+    // Same call without authMode: falls through to the existing
+    // reject-device-required path (regression guard — the new branch must not
+    // affect callers that don't pass authMode).
+    expect(
+      evaluateMissingDeviceIdentity({
+        hasDeviceIdentity: false,
+        role: "operator",
+        isControlUi: false,
+        controlUiAuthPolicy: policy,
+        trustedProxyAuthOk: false,
+        sharedAuthOk: false,
+        authOk: true,
+        hasSharedAuth: false,
+        isLocalClient: false,
+      }).kind,
+    ).toBe("reject-device-required");
+
+    // Non-"none" auth modes still require pairing (token / password / etc.).
+    expect(
+      evaluateMissingDeviceIdentity({
+        hasDeviceIdentity: false,
+        role: "operator",
+        isControlUi: false,
+        controlUiAuthPolicy: policy,
+        trustedProxyAuthOk: false,
+        sharedAuthOk: false,
+        authOk: true,
+        hasSharedAuth: true,
+        isLocalClient: false,
+        authMode: "token",
+      }).kind,
+    ).toBe("reject-device-required");
+
+    // Node-role registrations must still satisfy device identity even with
+    // auth.mode=none — the bypass is scoped to operator role only, matching
+    // the dangerouslyDisableDeviceAuth shape directly above.
+    expect(
+      evaluateMissingDeviceIdentity({
+        hasDeviceIdentity: false,
+        role: "node",
+        isControlUi: false,
+        controlUiAuthPolicy: policy,
+        trustedProxyAuthOk: false,
+        sharedAuthOk: false,
+        authOk: true,
+        hasSharedAuth: false,
+        isLocalClient: false,
+        authMode: "none",
+      }).kind,
+    ).toBe("reject-device-required");
+  });
+
   test("dangerouslyDisableDeviceAuth skips pairing for operator control-ui only", () => {
     const bypass = resolveControlUiAuthPolicy({
       isControlUi: true,

@@ -115,10 +115,13 @@ describe("resolveGatewayRuntimeConfig", () => {
 
   describe("token/password auth modes", () => {
     let originalToken: string | undefined;
+    let originalPrivateIngressNoAuth: string | undefined;
 
     beforeEach(() => {
       originalToken = process.env.OPENCLAW_GATEWAY_TOKEN;
+      originalPrivateIngressNoAuth = process.env.OPENCLAW_GATEWAY_PRIVATE_INGRESS_NO_AUTH;
       delete process.env.OPENCLAW_GATEWAY_TOKEN;
+      delete process.env.OPENCLAW_GATEWAY_PRIVATE_INGRESS_NO_AUTH;
     });
 
     afterEach(() => {
@@ -126,6 +129,11 @@ describe("resolveGatewayRuntimeConfig", () => {
         process.env.OPENCLAW_GATEWAY_TOKEN = originalToken;
       } else {
         delete process.env.OPENCLAW_GATEWAY_TOKEN;
+      }
+      if (originalPrivateIngressNoAuth !== undefined) {
+        process.env.OPENCLAW_GATEWAY_PRIVATE_INGRESS_NO_AUTH = originalPrivateIngressNoAuth;
+      } else {
+        delete process.env.OPENCLAW_GATEWAY_PRIVATE_INGRESS_NO_AUTH;
       }
     });
 
@@ -204,6 +212,24 @@ describe("resolveGatewayRuntimeConfig", () => {
       await expect(resolveGatewayRuntimeConfig({ cfg, port: 18789, host })).rejects.toThrow(
         expectedMessage,
       );
+    });
+
+    it("allows non-loopback none auth when private ingress no-auth is enabled", async () => {
+      process.env.OPENCLAW_GATEWAY_PRIVATE_INGRESS_NO_AUTH = "1";
+
+      const result = await resolveGatewayRuntimeConfig({
+        cfg: {
+          gateway: {
+            bind: "lan",
+            auth: { mode: "none" },
+            controlUi: { allowedOrigins: ["https://control.example.com"] },
+          },
+        },
+        port: 18789,
+      });
+
+      expect(result.authMode).toBe("none");
+      expect(result.bindHost).toBe("0.0.0.0");
     });
 
     it.each([

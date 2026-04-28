@@ -16,6 +16,7 @@ import {
   isContainerEnvironment,
   resolveGatewayBindHost,
 } from "../../gateway/net.js";
+import { allowsGatewayPrivateIngressNoAuth } from "../../gateway/private-ingress-auth.js";
 import type { GatewayWsLogStyle } from "../../gateway/ws-logging.js";
 import { setGatewayWsLogStyle } from "../../gateway/ws-logging.js";
 import { setVerbose } from "../../globals.js";
@@ -775,7 +776,8 @@ async function runGatewayCommand(opts: GatewayRunOpts) {
     bind !== "loopback" &&
     !hasSharedSecret &&
     !canBootstrapToken &&
-    resolvedAuthMode !== "trusted-proxy"
+    resolvedAuthMode !== "trusted-proxy" &&
+    !(resolvedAuthMode === "none" && allowsGatewayPrivateIngressNoAuth())
   ) {
     defaultRuntime.error(
       [

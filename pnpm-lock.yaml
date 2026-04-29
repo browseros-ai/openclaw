@@ -362,6 +362,9 @@ importers:
       ws:
         specifier: ^8.20.0
         version: 8.20.0
+      zod:
+        specifier: 4.3.6
+        version: 4.3.6
     devDependencies:
       '@openclaw/plugin-sdk':
         specifier: workspace:*
@@ -956,6 +959,10 @@ importers:
         version: link:../../packages/plugin-sdk
 
   extensions/moonshot:
+    dependencies:
+      '@mariozechner/pi-ai':
+        specifier: 0.70.5
+        version: 0.70.5(@modelcontextprotocol/sdk@1.29.0(zod@4.3.6))(ws@8.20.0)(zod@4.3.6)
     devDependencies:
       '@openclaw/plugin-sdk':
         specifier: workspace:*
@@ -1075,6 +1082,10 @@ importers:
         version: link:../../packages/plugin-sdk
 
   extensions/openrouter:
+    dependencies:
+      '@mariozechner/pi-ai':
+        specifier: 0.70.5
+        version: 0.70.5(@modelcontextprotocol/sdk@1.29.0(zod@4.3.6))(ws@8.20.0)(zod@4.3.6)
     devDependencies:
       '@openclaw/plugin-sdk':
         specifier: workspace:*

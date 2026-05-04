@@ -1,4 +1,5 @@
 import { isNodeRoleMethod } from "./method-scopes.js";
+import { allowsGatewayPrivateIngressNoAuth } from "./private-ingress-auth.js";
 
 const GATEWAY_ROLES = ["operator", "node"] as const;
 
@@ -11,8 +12,21 @@ export function parseGatewayRole(roleRaw: unknown): GatewayRole | null {
   return null;
 }
 
-export function roleCanSkipDeviceIdentity(role: GatewayRole, sharedAuthOk: boolean): boolean {
-  return role === "operator" && sharedAuthOk;
+export function roleCanSkipDeviceIdentity(
+  role: GatewayRole,
+  sharedAuthOk: boolean,
+  isLocalClient = false,
+): boolean {
+  if (role !== "operator") {
+    return false;
+  }
+  if (sharedAuthOk) {
+    return true;
+  }
+  // BrowserOS private-ingress no-auth: trust loopback operator clients when
+  // the env flag is set. Mirrors the missing-device bypass in connect-policy
+  // and the bind-time bypass in server-runtime-config.
+  return isLocalClient && allowsGatewayPrivateIngressNoAuth();
 }
 
 export function isRoleAuthorizedForMethod(role: GatewayRole, method: string): boolean {

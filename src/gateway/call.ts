@@ -41,6 +41,7 @@ import {
   resolveLeastPrivilegeOperatorScopesForMethod,
   type OperatorScope,
 } from "./method-scopes.js";
+import { allowsGatewayPrivateIngressNoAuth } from "./private-ingress-auth.js";
 import { PROTOCOL_VERSION } from "./protocol/index.js";
 export type { GatewayConnectionDetails };
 
@@ -267,10 +268,18 @@ function shouldOmitDeviceIdentityForGatewayCall(params: {
   const mode = params.opts.mode ?? GATEWAY_CLIENT_MODES.CLI;
   const clientName = params.opts.clientName ?? GATEWAY_CLIENT_NAMES.CLI;
   const hasSharedAuth = Boolean(params.token || params.password);
+  // BrowserOS private-ingress no-auth: backend gateway-client calls on
+  // loopback can omit device identity entirely when running with the env
+  // flag. Same trust boundary as the server-side bypasses in
+  // server-runtime-config and connect-policy. Without this, in-process
+  // backend tools (e.g. the agent's cron tool) try to load device.json
+  // and the connection then fails handshake under no-auth.
+  const allowsLoopbackNoAuth =
+    isLoopbackGatewayUrl(params.url) && allowsGatewayPrivateIngressNoAuth();
   return (
     mode === GATEWAY_CLIENT_MODES.BACKEND &&
     clientName === GATEWAY_CLIENT_NAMES.GATEWAY_CLIENT &&
-    hasSharedAuth &&
+    (hasSharedAuth || allowsLoopbackNoAuth) &&
     isLoopbackGatewayUrl(params.url)
   );
 }

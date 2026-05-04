@@ -1,3 +1,4 @@
+import { allowsGatewayPrivateIngressNoAuth } from "../../private-ingress-auth.js";
 import type { ConnectParams } from "../../protocol/index.js";
 import type { GatewayRole } from "../../role-policy.js";
 import { roleCanSkipDeviceIdentity } from "../../role-policy.js";
@@ -140,7 +141,13 @@ export function evaluateMissingDeviceIdentity(params: {
       return { kind: "reject-control-ui-insecure-auth" };
     }
   }
-  if (roleCanSkipDeviceIdentity(params.role, params.sharedAuthOk)) {
+  if (roleCanSkipDeviceIdentity(params.role, params.sharedAuthOk, params.isLocalClient)) {
+    return { kind: "allow" };
+  }
+  // BrowserOS private-ingress no-auth: extra defense for any future caller
+  // that bypasses roleCanSkipDeviceIdentity. Same trust boundary as the
+  // bind-time bypass in server-runtime-config (env flag set + loopback).
+  if (params.isLocalClient && allowsGatewayPrivateIngressNoAuth()) {
     return { kind: "allow" };
   }
   if (!params.authOk && params.hasSharedAuth) {
